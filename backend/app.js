@@ -11,21 +11,49 @@ const discordRouter = require("./src/routes/discord-room");
 require("dotenv").config();
 
 //setup socket
-const http = require('http')
-const server = http.createServer(app)
-const {Server} = require('socket.io')
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+
+const socketsStatus = {};
+
 const io = new Server(server, {
   cors: {
-    credentials:true,
+    credentials: true,
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
   },
 });
 
 io.on("connection", (socket) => {
-  socket.on('send message',msg => {
-    io.emit('send message',msg)
-  })
+
+
+  
+
+  socket.on("send message", (msg) => {
+    io.emit("send message", msg);
+  });
+  const socketId = socket.id;
+  socketsStatus[socketId] = {};
+
+  socket.on("voice", (data) => {
+    let newData = data.split(";");
+    newData[0] = "data:audio/ogg;";
+    newData = newData[0] + newData[1];
+    for(const id in socketsStatus){
+      if(id!=socketId || socketsStatus[id]){
+        socket.broadcast.to(id).emit("send",newData)
+      }
+    }
+    socket.on("disconnect", function () {
+      delete socketsStatus[socketId];
+    });
+  });
+
+  socket.on("userInformation", (data) => {
+    socketsStatus[socketId] = data;
+    io.emit("userUpdated",socketsStatus[socketId])
+  });
 });
 
 //end socket
