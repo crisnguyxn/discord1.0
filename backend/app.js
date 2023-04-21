@@ -18,6 +18,7 @@ const { Server } = require("socket.io");
 const socketsStatus = {};
 
 const io = new Server(server, {
+  path:'/text-channels/',
   cors: {
     credentials: true,
     origin: "http://localhost:3000",
@@ -27,15 +28,15 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
-
+  socket.on("join room", (rNo) => {
+    socket.join(rNo)
+  })
   
-
-  socket.on("send message", (msg) => {
-    io.emit("send message", msg);
+  socket.on("send message", (rNo,msg) => {
+    io.in(rNo).emit("send message", msg);
   });
   const socketId = socket.id;
   socketsStatus[socketId] = {};
-
   socket.on("voice", (data) => {
     let newData = data.split(";");
     newData[0] = "data:audio/ogg;";
@@ -49,6 +50,11 @@ io.on("connection", (socket) => {
       delete socketsStatus[socketId];
     });
   });
+
+  socket.on("leave room" , (username,id) => {
+    socket.leave(id)
+    socket.to(id).emit("send noti",`${username} leave this room, hoping see you again`)
+  })
 
   socket.on("userInformation", (data) => {
     socketsStatus[socketId] = data;
