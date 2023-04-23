@@ -8,8 +8,11 @@ const roomRouter = require("./src/routes/room");
 const cors = require("cors");
 const app = express();
 const discordRouter = require("./src/routes/discord-room");
+const bodyParser = require("body-parser");
+const imgRoute = require("./src/routes/imgRoute");
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
-
 //setup socket
 const http = require("http");
 const server = http.createServer(app);
@@ -18,7 +21,7 @@ const { Server } = require("socket.io");
 const socketsStatus = {};
 
 const io = new Server(server, {
-  path:'/text-channels/',
+  path: "/text-channels/",
   cors: {
     credentials: true,
     origin: "http://localhost:3000",
@@ -27,12 +30,11 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-
   socket.on("join room", (rNo) => {
-    socket.join(rNo)
-  })
-  
-  socket.on("send message", (rNo,msg) => {
+    socket.join(rNo);
+  });
+
+  socket.on("send message", (rNo, msg) => {
     io.in(rNo).emit("send message", msg);
   });
   const socketId = socket.id;
@@ -41,9 +43,9 @@ io.on("connection", (socket) => {
     let newData = data.split(";");
     newData[0] = "data:audio/ogg;";
     newData = newData[0] + newData[1];
-    for(const id in socketsStatus){
-      if(id!=socketId || socketsStatus[id]){
-        socket.broadcast.to(id).emit("send",newData)
+    for (const id in socketsStatus) {
+      if (id != socketId || socketsStatus[id]) {
+        socket.broadcast.to(id).emit("send", newData);
       }
     }
     socket.on("disconnect", function () {
@@ -51,18 +53,35 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("leave room" , (username,id) => {
-    socket.leave(id)
-    socket.to(id).emit("send noti",`${username} leave this room, hoping see you again`)
-  })
+  socket.on("leave room", (username, id) => {
+    socket.leave(id);
+    socket
+      .to(id)
+      .emit("send noti", `${username} leave this room, hoping see you again`);
+  });
 
   socket.on("userInformation", (data) => {
     socketsStatus[socketId] = data;
-    io.emit("userUpdated",socketsStatus[socketId])
+    io.emit("userUpdated", socketsStatus[socketId]);
   });
 });
 
 //end socket
+
+//setup multer middleware
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, __dirname + "/src/uploads");
+  },
+  filename: (req, file, cb) => {
+    const fileName = file.originalname.toLowerCase().split(" ").join("-");
+    cb(null, fileName + "-" + Date.now());
+  },
+});
+
+let upload = multer({ storage: storage });
+//end multer middleware
 
 //middlewares
 app.use(express.json());
@@ -72,7 +91,11 @@ const corsOptions = {
   optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.use(cookieParser());
+app.use(
+  bodyParser.urlencoded({
+    extended: false,
+  })
+);
 const port = 4000;
 const start = async () => {
   try {
@@ -87,6 +110,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/jobs", jobsRouter);
 app.use("/api/v1/rooms", roomRouter);
 app.use("/api/v1/discord-rooms", discordRouter);
+app.use("/api/v1/upload-files", upload.single("file"), imgRoute);
 app.use(handleErrMiddlewares);
 
 start();
