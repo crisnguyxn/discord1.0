@@ -20,7 +20,7 @@ const MessageSchema = mongoose.Schema({
     roomId:{
         type:String,
         required:true
-    }
+    },
 })
 
 module.exports =  mongoose.model('Message',MessageSchema)
