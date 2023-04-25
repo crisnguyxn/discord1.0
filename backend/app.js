@@ -9,9 +9,6 @@ const cors = require("cors");
 const app = express();
 const discordRouter = require("./src/routes/discord-room");
 const bodyParser = require("body-parser");
-const imgRoute = require("./src/routes/imgRoute");
-const fs = require("fs");
-const path = require("path");
 require("dotenv").config();
 //setup socket
 const http = require("http");
@@ -29,13 +26,29 @@ const io = new Server(server, {
   },
 });
 
+
+//setup multer middleware
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, __dirname + "/src/uploads");
+  },
+  filename: (req, file, cb) => {
+    const fileName = file.originalname.toLowerCase().split(" ").join("-");
+    cb(null, fileName + "-" + Date.now());
+  },
+});
+
+const upload = multer({ storage: storage }) 
+
+
 io.on("connection", (socket) => {
   socket.on("join room", (rNo) => {
     socket.join(rNo);
   });
 
   socket.on("send message", (rNo, msg) => {
-    io.in(rNo).emit("send message", msg);
+    io.in(rNo).emit("send", msg);
   });
   const socketId = socket.id;
   socketsStatus[socketId] = {};
@@ -68,21 +81,6 @@ io.on("connection", (socket) => {
 
 //end socket
 
-//setup multer middleware
-const multer = require("multer");
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, __dirname + "/src/uploads");
-  },
-  filename: (req, file, cb) => {
-    const fileName = file.originalname.toLowerCase().split(" ").join("-");
-    cb(null, fileName + "-" + Date.now());
-  },
-});
-
-let upload = multer({ storage: storage });
-//end multer middleware
-
 //middlewares
 app.use(express.json());
 const corsOptions = {
@@ -109,8 +107,7 @@ const start = async () => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/jobs", jobsRouter);
 app.use("/api/v1/rooms", roomRouter);
-app.use("/api/v1/discord-rooms", discordRouter);
-app.use("/api/v1/upload-files", upload.single("file"), imgRoute);
+app.use("/api/v1/discord-rooms", upload.array("files",12), discordRouter);
 app.use(handleErrMiddlewares);
 
 start();

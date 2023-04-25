@@ -1,5 +1,12 @@
 const mongoose = require('mongoose')
 
+const ImageSchema =  mongoose.Schema({
+    img:{
+        data:String,
+        contentType:String
+    }
+})
+
 const MessageSchema = mongoose.Schema({
     userId:{
         type:String,
@@ -21,6 +28,7 @@ const MessageSchema = mongoose.Schema({
         type:String,
         required:true
     },
-})
+    images:[ImageSchema]
+},{collection:"Message List"})
 
 module.exports =  mongoose.model('Message',MessageSchema)
