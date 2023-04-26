@@ -3,7 +3,6 @@ const connectDB = require("./src/db/connect");
 const authRouter = require("./src/routes/authen");
 const jobsRouter = require("./src/routes/jobs");
 const handleErrMiddlewares = require("./src/middlewares/handle-error");
-const cookieParser = require("cookie-parser");
 const roomRouter = require("./src/routes/room");
 const cors = require("cors");
 const app = express();
@@ -14,8 +13,6 @@ require("dotenv").config();
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-
-const socketsStatus = {};
 
 const io = new Server(server, {
   path: "/text-channels/",
@@ -50,33 +47,17 @@ io.on("connection", (socket) => {
   socket.on("send message", (rNo, msg) => {
     io.in(rNo).emit("send", msg);
   });
-  const socketId = socket.id;
-  socketsStatus[socketId] = {};
-  socket.on("voice", (data) => {
-    let newData = data.split(";");
-    newData[0] = "data:audio/ogg;";
-    newData = newData[0] + newData[1];
-    for (const id in socketsStatus) {
-      if (id != socketId || socketsStatus[id]) {
-        socket.broadcast.to(id).emit("send", newData);
-      }
-    }
-    socket.on("disconnect", function () {
-      delete socketsStatus[socketId];
-    });
-  });
 
-  socket.on("leave room", (username, id) => {
+  socket.on("leave room", (username,id) => {
     socket.leave(id);
     socket
       .to(id)
-      .emit("send noti", `${username} leave this room, hoping see you again`);
+      .emit("leave",username,id);
   });
 
-  socket.on("userInformation", (data) => {
-    socketsStatus[socketId] = data;
-    io.emit("userUpdated", socketsStatus[socketId]);
-  });
+  socket.on("addUser",(rId,userId,username) => {
+    io.emit("user",rId,userId,username)
+  })
 });
 
 //end socket

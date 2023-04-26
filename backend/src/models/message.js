@@ -7,6 +7,13 @@ const ImageSchema =  mongoose.Schema({
     }
 })
 
+const VideoSchema = mongoose.Schema({
+    video:{
+        data:String,
+        contentType:String
+    }
+})
+
 const MessageSchema = mongoose.Schema({
     userId:{
         type:String,
@@ -14,7 +21,6 @@ const MessageSchema = mongoose.Schema({
     },
     message:{
         type:String,
-        required:true
     },
     username:{
         type:String,
@@ -28,7 +34,11 @@ const MessageSchema = mongoose.Schema({
         type:String,
         required:true
     },
-    images:[ImageSchema]
+    images:[ImageSchema],
+    audio:{
+        type:String
+    },
+    videos:[VideoSchema]
 },{collection:"Message List"})
 
 module.exports =  mongoose.model('Message',MessageSchema)
