@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  mongo_db:
+    image: mongo:6-jammy
+    restart: always
+    volumes:
+      - dbdata6:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME = hyundev1406
+      - MONGO_INITDB_ROOT_PASSWORD = hyun2022
+
+  nginx:
+    depends_on:
+      - api
+      - client
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    ports:
+      - "3050:80"
+
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: "./backend"
+    depends_on:
+      - mongo_db
+    volumes:
+      - /app/node_modules
+      - ./backend:/app
+    environment:
+      - MONGODB_URL=mongodb+srv://hyundev1406:hyun2022@cluster0.wfqc9nm.mongodb.net/DISCORD-DATABASE?retryWrites=true&w=majority
+  client:
+    stdin_open: true
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
+    volumes:
+      - /app/node_modules
+      - ./frontend:/app
+
+volumes:
+  dbdata6:
