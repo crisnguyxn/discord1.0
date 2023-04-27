@@ -18,7 +18,7 @@ const io = new Server(server, {
   path: "/text-channels/",
   cors: {
     credentials: true,
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:8080","http://localhost:3000","http://localhost:3050"],
     methods: ["GET", "POST"],
   },
 });
@@ -65,7 +65,7 @@ io.on("connection", (socket) => {
 //middlewares
 app.use(express.json());
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: ["http://localhost:3000"],
   credentials: true,
   optionSuccessStatus: 200,
 };
