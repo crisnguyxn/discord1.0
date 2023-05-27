@@ -6,6 +6,7 @@ const handleErrMiddlewares = require("./src/middlewares/handle-error");
 const roomRouter = require("./src/routes/room");
 const cors = require("cors");
 const app = express();
+const fs = require('fs')
 const discordRouter = require("./src/routes/discord-room");
 const bodyParser = require("body-parser");
 require("dotenv").config();
@@ -26,9 +27,14 @@ const io = new Server(server, {
 
 //setup multer middleware
 const multer = require("multer");
+const srcMediaFile = "/src/uploads";
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, __dirname + "/src/uploads");
+    if(!fs.existsSync(srcMediaFile)){
+      fs.mkdirSync(srcMediaFile);
+    }
+    cb(null, __dirname + srcMediaFile);
   },
   filename: (req, file, cb) => {
     const fileName = file.originalname.toLowerCase().split(" ").join("-");
@@ -40,12 +46,21 @@ const upload = multer({ storage: storage })
 
 
 io.on("connection", (socket) => {
-  socket.on("join room", (rNo) => {
+  socket.on("join-room", (rNo,userId) => {
     socket.join(rNo);
   });
 
+  socket.on("make-call",(rNo,userId) => {
+    io.to(rNo).emit("user-connected",userId)
+  })
+
+  socket.on("join-text-room",roomId => {
+    console.log(roomId,"check join text");
+    socket.join(roomId)
+  })
+
   socket.on("send message", (rNo, msg) => {
-    io.in(rNo).emit("send", msg);
+    io.to(rNo).emit("send", msg);
   });
 
   socket.on("leave room", (username,id) => {
@@ -65,7 +80,7 @@ io.on("connection", (socket) => {
 //middlewares
 app.use(express.json());
 const corsOptions = {
-  origin: ["http://localhost:3000"],
+  origin: ["http://localhost:3000","https://discordv10.vercel.app"],
   credentials: true,
   optionSuccessStatus: 200,
 };

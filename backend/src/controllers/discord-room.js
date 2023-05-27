@@ -7,7 +7,7 @@ const createRoom = asyncWrapper(async (req, res) => {
   const data = await DiscordRoom.create(req.body);
   res.status(200).json({ data });
 });
-const getVoiceRoom = asyncWrapper(async (req, res) => {
+const getTextRoom = asyncWrapper(async (req, res) => {
   const data = await DiscordRoom.find({ roomId: req.params.id });
   res.status(200).json(data);
 });
@@ -62,7 +62,7 @@ const getChannel = asyncWrapper(async (req, res) => {
 
 module.exports = {
   createRoom,
-  getVoiceRoom,
+  getTextRoom,
   postMessage,
   getMessages,
   getChannel,

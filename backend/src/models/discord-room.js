@@ -12,7 +12,10 @@ const DiscordRoom = mongoose.Schema({
     roomId:{
         type:String,
         required:true
+    },
+    isText:{
+        type:Boolean
     }
-})
+},{collection:"Discord Room"})
 
 module.exports = mongoose.model('discordRoom',DiscordRoom)
